@@ -2,7 +2,8 @@
 
 CKeyBoard::CKeyBoard() :
 	m_init_proc_thread(FALSE), m_init_event_thread(FALSE),
-	m_key_hook(nullptr), m_init_kbdh_thread(FALSE)
+	m_key_hook(nullptr), m_init_kbdh_thread(FALSE),
+	m_bcapslock(FALSE), m_bhangul(FALSE)
 {
 
 }
@@ -124,20 +125,44 @@ void CKeyBoard::InitKeyBoardHook()
 
 LRESULT CALLBACK CKeyBoard::KeyBoardHook(int nCode, WPARAM wParam, LPARAM lParam)
 {
+	return CKeyBoard::Get().DoKeyBoardHook(nCode, wParam, lParam);
+}
+
+LRESULT CKeyBoard::DoKeyBoardHook(int nCode, WPARAM wParam, LPARAM lParam)
+{
 	if (nCode == HC_ACTION)
 	{
+		if (wParam != WM_SYSKEYDOWN && wParam != WM_KEYDOWN)
+			goto END;
+
 		KBDLLHOOKSTRUCT* pKeyBoard = (KBDLLHOOKSTRUCT*)lParam;
 		DWORD vkCode = pKeyBoard->vkCode;
 
 		switch (wParam)
 		{
 		case WM_KEYDOWN:
-			std::cout << (char)vkCode << std::endl;
+			if (vkCode == VK_CAPITAL)
+			{
+				m_bcapslock = !m_bcapslock;
+				std::wcout << "Caps Lock" << m_bcapslock << std::endl;
+				goto END;
+			}
+			else if (vkCode == VK_HANGUL)
+			{
+				m_bhangul = !m_bhangul;
+				std::wcout << "HanGul" << m_bhangul << std::endl;
+				goto END;
+			}
+			else
+			{
+				std::wcout << (WCHAR)vkCode << std::endl;
+			}
+
 			break;
 		}
 	}
-
-	return CallNextHookEx(CKeyBoard::Get().GetKeyHook(), nCode, wParam, lParam);
+END:
+	return CallNextHookEx(m_key_hook, nCode, wParam, lParam);
 }
 
 void CKeyBoard::InitEventHook()
