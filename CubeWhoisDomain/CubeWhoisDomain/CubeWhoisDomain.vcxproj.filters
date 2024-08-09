@@ -1,0 +1,177 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="common">
+      <UniqueIdentifier>{07228c70-4445-4914-be0d-be0c4e0f5ebb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\cpprestsdk">
+      <UniqueIdentifier>{4391e608-9b2f-4d6c-a145-a3e40cf25c8b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\pplx">
+      <UniqueIdentifier>{92a4139f-562a-4052-8258-36c4d66bfb52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\cpprestsdk\detail">
+      <UniqueIdentifier>{5cc883ae-7855-4e1b-ade2-7bbc25e18859}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\zlib">
+      <UniqueIdentifier>{0790fd76-90dc-4f9b-bed3-cdf9e812ef4a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\common\CubeWhoisDomain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\CubeWebSocket.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\common\CubeWhoisDomain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\astreambuf.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\asyncrt_utils.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\base_uri.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\containerstream.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\filestream.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\http_client.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\http_compression.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\http_headers.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\http_listener.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\http_msg.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\interopstream.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\json.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\oauth1.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\oauth2.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\producerconsumerstream.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\rawptrstream.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\streams.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\uri.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\uri_builder.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\version.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\ws_client.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\ws_msg.h">
+      <Filter>common\cpprestsdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\details\basic_types.h">
+      <Filter>common\cpprestsdk\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\details\cpprest_compat.h">
+      <Filter>common\cpprestsdk\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\details\fileio.h">
+      <Filter>common\cpprestsdk\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\details\http_helpers.h">
+      <Filter>common\cpprestsdk\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\details\http_server.h">
+      <Filter>common\cpprestsdk\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\details\http_server_api.h">
+      <Filter>common\cpprestsdk\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\details\nosal.h">
+      <Filter>common\cpprestsdk\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\details\resource.h">
+      <Filter>common\cpprestsdk\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\details\SafeInt3.hpp">
+      <Filter>common\cpprestsdk\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cpprest\details\web_utilities.h">
+      <Filter>common\cpprestsdk\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pplx\pplx.h">
+      <Filter>common\pplx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pplx\pplxcancellation_token.h">
+      <Filter>common\pplx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pplx\pplxconv.h">
+      <Filter>common\pplx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pplx\pplxinterface.h">
+      <Filter>common\pplx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pplx\pplxlinux.h">
+      <Filter>common\pplx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pplx\pplxtasks.h">
+      <Filter>common\pplx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pplx\pplxwin.h">
+      <Filter>common\pplx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\zconf.h">
+      <Filter>common\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\zlib.h">
+      <Filter>common\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\BaseNetworkInc.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\CubeWebSocket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

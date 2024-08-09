@@ -2,8 +2,7 @@
 
 CKeyBoard::CKeyBoard() :
 	m_init_proc_thread(FALSE), m_init_event_thread(FALSE),
-	m_key_hook(nullptr), m_init_kbdh_thread(FALSE),
-	m_bcapslock(FALSE), m_bhangul(FALSE)
+	m_key_hook(nullptr), m_init_kbdh_thread(FALSE)
 {
 
 }
@@ -108,12 +107,11 @@ void CKeyBoard::DoProcessThread()
 		CloseHandle(hsnapshot);
 	}
 }
-
 void CKeyBoard::InitKeyBoardHook()
 {
 	MSG msg;
 	m_init_kbdh_thread = TRUE;
-	m_key_hook = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyBoardHook, (HINSTANCE)NULL, NULL);
+	m_key_hook = SetWindowsHookEx(WH_KEYBOARD_LL, KeyBoardHook, (HINSTANCE)NULL, NULL);
 
 	while (m_init_kbdh_thread)
 	{
@@ -132,13 +130,57 @@ LRESULT CKeyBoard::DoKeyBoardHook(int nCode, WPARAM wParam, LPARAM lParam)
 {
 	if (nCode == HC_ACTION)
 	{
+		KBDLLHOOKSTRUCT* pKeyBoard = (KBDLLHOOKSTRUCT*)lParam;
+
+		HWND hForegroundWindow = GetForegroundWindow();
+		HIMC hIMC = ImmGetContext(hForegroundWindow);
+
+		DWORD conversion, sentence;
+		ImmGetConversionStatus(hIMC, &conversion, &sentence);
+
+		BYTE keyState[256];
+
+		GetKeyboardState(keyState);
+
+		if ((GetKeyState(VK_CAPITAL) & 0x0001) != 0)
+		{
+			keyState[VK_CAPITAL] = 1;
+		}
+
+		if ((GetKeyState(VK_SHIFT) & 0x8000) != 0)
+		{
+			keyState[VK_SHIFT] = 0x80;
+		}
+
+		if ((GetKeyState(VK_CONTROL) & 0x8000) != 0)
+		{
+			keyState[VK_CONTROL] = 0x80;
+		}
+
+		if (conversion == IME_CMODE_NATIVE)
+		{
+			std::cout << "English" << std::endl;
+		}
+
+		ImmReleaseContext(hForegroundWindow, hIMC);
+
 		if (wParam != WM_SYSKEYDOWN && wParam != WM_KEYDOWN)
 			goto END;
 
-		KBDLLHOOKSTRUCT* pKeyBoard = (KBDLLHOOKSTRUCT*)lParam;
 		DWORD vkCode = pKeyBoard->vkCode;
+		DWORD scanCode = pKeyBoard->scanCode;
+		
+		WCHAR unicodeBuffer[5] = {0};
+		int result = ToUnicodeEx(vkCode, scanCode, keyState, unicodeBuffer, 4, 0, GetKeyboardLayout(0));
 
-		switch (wParam)
+		if (result > 0)
+		{
+			unicodeBuffer[result] = L'\0';
+
+			std::wcout << unicodeBuffer << std::endl;
+		}
+
+		/*switch (wParam)
 		{
 		case WM_KEYDOWN:
 			if (vkCode == VK_CAPITAL)
@@ -159,7 +201,7 @@ LRESULT CKeyBoard::DoKeyBoardHook(int nCode, WPARAM wParam, LPARAM lParam)
 			}
 
 			break;
-		}
+		}*/
 	}
 END:
 	return CallNextHookEx(m_key_hook, nCode, wParam, lParam);

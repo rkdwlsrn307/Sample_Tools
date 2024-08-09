@@ -6,8 +6,6 @@ private:
 	std::map<std::wstring, DWORD>m_browser_map;
 	std::map<std::wstring, HWINEVENTHOOK>m_hook_map;
 	HHOOK m_key_hook;
-	BOOL m_bcapslock;
-	BOOL m_bhangul;
 	BOOL m_init_proc_thread;
 	BOOL m_init_kbdh_thread;
 	BOOL m_init_event_thread;

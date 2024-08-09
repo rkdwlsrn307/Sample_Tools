@@ -11,6 +11,7 @@
 
 #include <oleacc.h>
 #include <tchar.h>
+#include <imm.h>
 #include <comutil.h>
 #include <strsafe.h>
 #include <time.h>
@@ -23,5 +24,6 @@
 
 #pragma comment(lib, "oleacc.lib")
 #pragma comment(lib, "comsuppw.lib")
+#pragma comment(lib, "imm32.lib")
 
 #include "EngineKeyBoard.h"
