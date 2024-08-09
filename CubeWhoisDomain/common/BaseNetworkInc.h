@@ -11,8 +11,6 @@
 #include "zlib.h"
 
 #pragma comment(lib, "Ws2_32.lib")
-#pragma comment(lib, "cpprest_2_10.lib")
-#pragma comment(lib, "zlib.lib")
 
 #define CUBE_PORT "43"
 #define CUBE_ADDRESS "whois.verisign-grs.com"
