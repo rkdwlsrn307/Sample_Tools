@@ -30,4 +30,13 @@
 #pragma warning( disable : 4995 )
 #pragma warning( disable : 4267 )
 
+typedef NTSTATUS(WINAPI* pNtQueryInformationProcess)
+(
+	HANDLE ProcessHandle,
+	PROCESSINFOCLASS ProcessInformationClass,
+	PVOID ProcessInformation,
+	ULONG ProcessInformationLength,
+	PULONG ReturnLength
+);
+
 #include "WebUIAutomation.h"

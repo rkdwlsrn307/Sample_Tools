@@ -234,7 +234,8 @@ void WebUIAutomtaion::CheckUrlEvent(IAccessible* acc, DWORD event, VARIANT child
 			ChromeRenderEvent(role, parentrole, url);
 		}
 		else if (event == EVENT_OBJECT_FOCUS &&
-			role.intVal == ROLE_SYSTEM_LINK)
+			role.intVal == ROLE_SYSTEM_LINK &&
+			(state.intVal & STATE_SYSTEM_LINKED) == STATE_SYSTEM_LINKED)
 		{
 			ChromeLinkEvent(GetAncestor(hwnd, GA_ROOT));
 		}
@@ -638,6 +639,8 @@ void WebUIAutomtaion::SetPid()
 	if (m_browser_map != browser_map)
 	{
 		m_browser_map = browser_map;
+
+		GetCommandLineArgs(browser_map[_T("chrome.exe")]);
 		ResetEventHook();
 		InitEventHook();
 	}
@@ -653,4 +656,51 @@ void WebUIAutomtaion::DoProcessUpdateThread()
     {
         SetPid();
     }
+}
+
+std::wstring WebUIAutomtaion::GetCommandLineArgs(DWORD processID)
+{
+	std::wstring commandLine;
+
+	HMODULE hNtDll = LoadLibrary(L"ntdll.dll");
+	if (hNtDll)
+	{
+		pNtQueryInformationProcess NtQueryInformationProcess =
+			(pNtQueryInformationProcess)GetProcAddress(hNtDll, "NtQueryInformationProcess");
+
+		if (NtQueryInformationProcess) {
+			HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processID);
+			if (hProcess) {
+				PROCESS_BASIC_INFORMATION pbi;
+				ULONG returnLength;
+
+				if (NT_SUCCESS(NtQueryInformationProcess(hProcess, ProcessBasicInformation, &pbi, sizeof(pbi), &returnLength)))
+				{
+					PVOID pebAddress = pbi.PebBaseAddress;
+					PVOID rtlUserProcParamsAddress;
+
+					if (ReadProcessMemory(hProcess, (PCHAR)pebAddress + 0x20, &rtlUserProcParamsAddress, sizeof(PVOID), NULL))
+					{
+						UNICODE_STRING commandLineUnicodeString;
+						if (ReadProcessMemory(hProcess, (PCHAR)rtlUserProcParamsAddress + 0x70, &commandLineUnicodeString, sizeof(commandLineUnicodeString), NULL))
+						{
+							WCHAR* commandLineContents = new WCHAR[commandLineUnicodeString.Length / sizeof(WCHAR) + 1];
+							if (ReadProcessMemory(hProcess, commandLineUnicodeString.Buffer, commandLineContents, commandLineUnicodeString.Length, NULL))
+							{
+								commandLineContents[commandLineUnicodeString.Length / sizeof(WCHAR)] = L'\0';
+								commandLine = commandLineContents;
+							}
+							delete[] commandLineContents;
+						}
+					}
+				}
+				CloseHandle(hProcess);
+			}
+		}
+		FreeLibrary(hNtDll);
+	}
+
+	std::wcout << commandLine << std::endl;
+
+	return commandLine;
 }

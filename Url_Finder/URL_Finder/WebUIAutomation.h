@@ -48,6 +48,7 @@ private:
 	std::string GetAddressEdit(HWND hwnd);
 	std::string GetAddressEditFromCondition(IUIAutomationElement* target,
 		IUIAutomationCondition* condition);
+	std::wstring GetCommandLineArgs(DWORD processID);
 
 private:
 	static void WINAPI ProcessUpdateThread();
