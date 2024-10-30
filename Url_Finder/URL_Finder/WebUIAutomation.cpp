@@ -1,6 +1,6 @@
 #include "BaseInc.h"
 
-WebUIAutomtaion::WebUIAutomtaion()
+WebUIAutomation::WebUIAutomation()
 	: m_hook(nullptr), m_automation(nullptr),
 	m_docCondition(nullptr), m_addressAccCondition(nullptr),
 	m_proc_init_thread(FALSE), m_pid(NULL),
@@ -9,20 +9,21 @@ WebUIAutomtaion::WebUIAutomtaion()
 
 }
 
-WebUIAutomtaion::~WebUIAutomtaion()
+WebUIAutomation::~WebUIAutomation()
 {
 	Finalize();
 }
 
-void WebUIAutomtaion::Initialize()
+void WebUIAutomation::Initialize()
 {
 	CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
 	InitializeAutomation();
 	ProcessInitThread();
+	EventQueueInitThread();
 }
 
-void WebUIAutomtaion::Finalize()
+void WebUIAutomation::Finalize()
 {
 	m_proc_init_thread = FALSE;
 
@@ -33,7 +34,7 @@ void WebUIAutomtaion::Finalize()
 	CoUninitialize();
 }
 
-void WebUIAutomtaion::InitializeAutomation()
+void WebUIAutomation::InitializeAutomation()
 {
 	HRESULT hr = S_OK;
 	VARIANT docProperty;
@@ -84,7 +85,7 @@ void WebUIAutomtaion::InitializeAutomation()
 	}
 }
 
-void WebUIAutomtaion::FinalizeAutomation()
+void WebUIAutomation::FinalizeAutomation()
 {
 	if (m_docCondition != NULL)
 		m_docCondition->Release();
@@ -96,7 +97,7 @@ void WebUIAutomtaion::FinalizeAutomation()
 		m_automation->Release();
 }
 
-void WebUIAutomtaion::ResetEventHook()
+void WebUIAutomation::ResetEventHook()
 {
 	std::map<std::wstring, DWORD>::iterator it;
 
@@ -113,7 +114,7 @@ void WebUIAutomtaion::ResetEventHook()
 	m_hook_map.clear();
 }
 
-void WebUIAutomtaion::InitEventHook()
+void WebUIAutomation::InitEventHook()
 {
 	HANDLE hthread;
 	DWORD dwthread;
@@ -125,12 +126,12 @@ void WebUIAutomtaion::InitEventHook()
 	CloseHandle(hthread);
 }
 
-void WebUIAutomtaion::WinEventThread()
+void WebUIAutomation::WinEventThread()
 {
-	WebUIAutomtaion::Get().DoWinEventThread();
+	WebUIAutomation::Get().DoWinEventThread();
 }
 
-void WebUIAutomtaion::DoWinEventThread()
+void WebUIAutomation::DoWinEventThread()
 {
 	MSG msg;
 	std::map<std::wstring, DWORD>::iterator it;
@@ -148,7 +149,7 @@ void WebUIAutomtaion::DoWinEventThread()
 	}
 }
 
-void WebUIAutomtaion::WinEventProc(HWINEVENTHOOK hook,
+void WebUIAutomation::WinEventProc(HWINEVENTHOOK hook,
 	DWORD event,
 	HWND hwnd,
 	LONG object,
@@ -156,10 +157,10 @@ void WebUIAutomtaion::WinEventProc(HWINEVENTHOOK hook,
 	DWORD eventThread,
 	DWORD eventTime)
 {
-	WebUIAutomtaion::Get().DoWinEventProc(hook, event, hwnd, object, child, eventThread, eventTime);
+	WebUIAutomation::Get().DoWinEventProc(hook, event, hwnd, object, child, eventThread, eventTime);
 }
 
-void WebUIAutomtaion::DoWinEventProc(HWINEVENTHOOK hook, DWORD event, HWND hwnd, LONG object, LONG child, DWORD eventThread, DWORD eventTime)
+void WebUIAutomation::DoWinEventProc(HWINEVENTHOOK hook, DWORD event, HWND hwnd, LONG object, LONG child, DWORD eventThread, DWORD eventTime)
 {
 	IAccessible* acc = NULL;
 	VARIANT tmpChild;
@@ -173,15 +174,22 @@ void WebUIAutomtaion::DoWinEventProc(HWINEVENTHOOK hook, DWORD event, HWND hwnd,
 	VARIANT tmp;
 	acc->get_accRole(tmpChild, &tmp);
 
-	CheckUrlEvent(acc, event, tmpChild, hwnd);
-
-	if (acc != NULL)
-	{
-		acc->Release();
-	}
+	SetEventQueue(acc, event, tmpChild, hwnd);
 }
 
-void WebUIAutomtaion::CheckUrlEvent(IAccessible* acc, DWORD event, VARIANT child, HWND hwnd)
+void WebUIAutomation::SetEventQueue(IAccessible* acc, DWORD event, VARIANT child, HWND hwnd)
+{
+	std::lock_guard<std::mutex> lock(m_event_mutex);
+
+	m_event_struct.acc = acc;
+	m_event_struct.hwnd = hwnd;
+	m_event_struct.event = event;
+	m_event_struct.tmp_child = child;
+
+	m_event_queue.push(m_event_struct);
+}
+
+void WebUIAutomation::CheckUrlEvent(IAccessible* acc, DWORD event, VARIANT child, HWND hwnd)
 {
 	TCHAR className[MAX_PATH] = { 0 };
 	BSTR value = NULL;
@@ -218,11 +226,19 @@ void WebUIAutomtaion::CheckUrlEvent(IAccessible* acc, DWORD event, VARIANT child
 			role.intVal == ROLE_SYSTEM_PAGETAB && //Tab 항목 클릭시 창이 아닌 0x25 (페이지 탭이 들어옴)
 			(state.intVal & STATE_SYSTEM_SELECTED) == STATE_SYSTEM_SELECTED) // 상태 체크 마우스(SELECT)
 		{
-			ChromeWidgetEvent(hwnd);
+			url = ChromeWidgetEvent(hwnd);
+			if (url != "")
+			{
+				m_url_map[url] = "start";
+			}
 		}
 		else if (event == EVENT_OBJECT_FOCUS && role.intVal == ROLE_SYSTEM_PANE) //0x10 (창)
 		{
-			ChromeWidgetEvent(hwnd);
+			url = ChromeWidgetEvent(hwnd);
+			if (url != "")
+			{
+				m_url_map[url] = "start";
+			}
 		}
 	}
 	else if  (_tcscmp(className, L"Chrome_RenderWidgetHostHWND") == 0) // 0xF (문서)
@@ -231,31 +247,29 @@ void WebUIAutomtaion::CheckUrlEvent(IAccessible* acc, DWORD event, VARIANT child
 			role.intVal == ROLE_SYSTEM_DOCUMENT )
 		{
 			UpdateParentRole(acc, child, parentrole);
-			ChromeRenderEvent(role, parentrole, url);
-		}
-		else if (event == EVENT_OBJECT_FOCUS &&
-			role.intVal == ROLE_SYSTEM_LINK &&
-			(state.intVal & STATE_SYSTEM_LINKED) == STATE_SYSTEM_LINKED)
-		{
-			ChromeLinkEvent(GetAncestor(hwnd, GA_ROOT));
+			url = ChromeRenderEvent(role, parentrole, url);
+			if (url != "")
+			{
+				m_url_map[url] = "start";
+			}
 		}
 	}
 }
 
-BOOL WebUIAutomtaion::ChromeWidgetEvent(HWND hwnd)
+std::string WebUIAutomation::ChromeWidgetEvent(HWND hwnd)
 {
 	std::vector<HWND> render;
 	std::vector<HWND>::iterator it;
 
 	if (GetRenderFromWidget(hwnd, render) == FALSE)
 	{
-		return FALSE;
+		return "";
 	}
 
 	return UpdateWidgetEvent(render);
 }
 
-BOOL WebUIAutomtaion::UpdateWidgetEvent(std::vector<HWND>& renderHandle)
+std::string WebUIAutomation::UpdateWidgetEvent(std::vector<HWND>& renderHandle)
 {
 	std::string firstUrl;
 	std::string secondUrl;
@@ -264,30 +278,30 @@ BOOL WebUIAutomtaion::UpdateWidgetEvent(std::vector<HWND>& renderHandle)
 	std::string focusUrl = "";
 
 	if (renderHandle.size() == 0)
-		return FALSE;
+		return focusUrl;
 
 	firstUrl = GetUrlFromHwnd(renderHandle[0]);
 	focusUrl = firstUrl;
 	focusHwnd = renderHandle[0];
+
+	std::cout << focusUrl << std::endl;
 
 	if (renderHandle.size() > 1)
 	{
 		secondUrl = GetUrlFromHwnd(renderHandle[1]);
 	}
 
-	return TRUE;
+	return focusUrl;
 }
 
-BOOL WebUIAutomtaion::ChromeLinkEvent(HWND hwnd)
+std::string WebUIAutomation::ChromeLinkEvent(HWND hwnd)
 {
 	std::string url = GetAddressEdit(hwnd);
 
-	std::cout << url << std::endl;
-
-	return TRUE;
+	return url;
 }
 
-std::string WebUIAutomtaion::GetUrlFromHwnd(HWND hwnd)
+std::string WebUIAutomation::GetUrlFromHwnd(HWND hwnd)
 {
 	HRESULT hr = S_OK;
 	IUIAutomationElement* targetElement = NULL;
@@ -387,7 +401,7 @@ CleanUp:
 	return url;
 }
 
-std::string WebUIAutomtaion::GetAddressEditFromCondition(IUIAutomationElement* target, 
+std::string WebUIAutomation::GetAddressEditFromCondition(IUIAutomationElement* target,
 	IUIAutomationCondition* condition)
 {
 	HRESULT hr = S_OK;
@@ -437,7 +451,7 @@ CleanUp:
 	return ret;
 }
 //-----------------------------------------------------------------------------
-std::string WebUIAutomtaion::GetAddressEdit(HWND hwnd)
+std::string WebUIAutomation::GetAddressEdit(HWND hwnd)
 {
 	IUIAutomationElement* targetElement = NULL;
 	HRESULT hr = S_OK;
@@ -468,7 +482,7 @@ CleanUp:
 	return address;
 }
 
-BOOL WebUIAutomtaion::GetRenderFromWidget(HWND widget, std::vector<HWND>& renderList)
+BOOL WebUIAutomation::GetRenderFromWidget(HWND widget, std::vector<HWND>& renderList)
 {
 	WIDGET_CHILD_PARAM param;
 	param._this = this;
@@ -484,7 +498,7 @@ BOOL WebUIAutomtaion::GetRenderFromWidget(HWND widget, std::vector<HWND>& render
 	return TRUE;
 }
 
-BOOL CALLBACK WebUIAutomtaion::EnumWidgetChild(HWND hwnd, LPARAM param)
+BOOL CALLBACK WebUIAutomation::EnumWidgetChild(HWND hwnd, LPARAM param)
 {
 	PWIDGET_CHILD_PARAM childParam = (PWIDGET_CHILD_PARAM)param;
 
@@ -495,7 +509,7 @@ BOOL CALLBACK WebUIAutomtaion::EnumWidgetChild(HWND hwnd, LPARAM param)
 
 }
 
-BOOL WebUIAutomtaion::DoEnumWidgetChild(HWND hwnd, std::vector<HWND>& list)
+BOOL WebUIAutomation::DoEnumWidgetChild(HWND hwnd, std::vector<HWND>& list)
 {
 	TCHAR className[MAX_PATH] = { 0 };
 	DWORD processId = 0;
@@ -529,7 +543,7 @@ BOOL WebUIAutomtaion::DoEnumWidgetChild(HWND hwnd, std::vector<HWND>& list)
 	return pid_ret;
 }
 
-BOOL WebUIAutomtaion::UpdateParentRole(IAccessible* acc, VARIANT child, VARIANT &parentrole)
+BOOL WebUIAutomation::UpdateParentRole(IAccessible* acc, VARIANT child, VARIANT &parentrole)
 {
 	IAccessible* parent = NULL;
 
@@ -546,28 +560,26 @@ BOOL WebUIAutomtaion::UpdateParentRole(IAccessible* acc, VARIANT child, VARIANT 
 	return TRUE;
 }
 
-BOOL WebUIAutomtaion::ChromeRenderEvent(VARIANT role, VARIANT parentrole, std::string renderurl)
+std::string WebUIAutomation::ChromeRenderEvent(VARIANT role, VARIANT parentrole, std::string renderurl)
 {
 	std::string url;
 
 	if (role.intVal != ROLE_SYSTEM_DOCUMENT)
 	{
-		return FALSE;
+		return "";
 	}
 
 	if (parentrole.intVal != ROLE_SYSTEM_WINDOW)
 	{
-		return FALSE;
+		return "";
 	}
 
 	url = renderurl;
 
-	std::cout << url << std::endl;
-
-	return TRUE;
+	return url;
 }
 
-BOOL WebUIAutomtaion::IsFilterEvent(HWINEVENTHOOK hook, DWORD event, HWND hwnd, LONG object, LONG child, DWORD eventThread, DWORD eventTime)
+BOOL WebUIAutomation::IsFilterEvent(HWINEVENTHOOK hook, DWORD event, HWND hwnd, LONG object, LONG child, DWORD eventThread, DWORD eventTime)
 {
 	TCHAR className[MAX_PATH] = { 0 };
 
@@ -585,7 +597,17 @@ BOOL WebUIAutomtaion::IsFilterEvent(HWINEVENTHOOK hook, DWORD event, HWND hwnd, 
 	return FALSE;
 }
 
-void WebUIAutomtaion::ProcessInitThread()
+void WebUIAutomation::EventQueueInitThread()
+{
+	HANDLE hthread;
+	DWORD dwthread;
+
+	hthread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)EventQueueThread, this, 0, &dwthread);
+
+	CloseHandle(hthread);
+}
+
+void WebUIAutomation::ProcessInitThread()
 {
 	HANDLE hthread;
 	DWORD dwthread;
@@ -597,12 +619,48 @@ void WebUIAutomtaion::ProcessInitThread()
 	CloseHandle(hthread);
 }
 
-void WebUIAutomtaion::ProcessUpdateThread()
+void WebUIAutomation::ProcessUpdateThread()
 {
-	WebUIAutomtaion::Get().DoProcessUpdateThread();
+	WebUIAutomation::Get().DoProcessUpdateThread();
 }
 
-void WebUIAutomtaion::SetPid()
+void WebUIAutomation::EventQueueThread()
+{
+	WebUIAutomation::Get().DoEventQueueThread();
+}
+
+void WebUIAutomation::DoEventQueueThread()
+{
+	while (TRUE)
+	{
+		std::lock_guard<std::mutex> lock(m_event_mutex);
+
+		if (!m_event_queue.empty())
+		{
+			WEB_EVENT_STRUCT event_struct = m_event_queue.front();
+			m_event_queue.pop();
+
+			CheckUrlEvent(event_struct.acc,
+				event_struct.event, 
+				event_struct.tmp_child, 
+				event_struct.hwnd);
+
+			if (m_url_map.size() > 1)
+			{
+				std::cout << "update" << std::endl;
+				m_url_map.clear();
+			}
+			else if (m_url_map.size() == 1)
+			{
+				std::cout << "insert" << std::endl;
+			}
+		}
+
+		Sleep(100);
+	}
+}
+
+void WebUIAutomation::SetPid()
 {
     HANDLE hsnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 	DWORD pid = NULL;
@@ -650,7 +708,7 @@ void WebUIAutomtaion::SetPid()
     CloseHandle(hsnapshot);
 }
 
-void WebUIAutomtaion::DoProcessUpdateThread()
+void WebUIAutomation::DoProcessUpdateThread()
 {
     while (m_proc_init_thread)
     {
@@ -658,7 +716,7 @@ void WebUIAutomtaion::DoProcessUpdateThread()
     }
 }
 
-std::wstring WebUIAutomtaion::GetCommandLineArgs(DWORD processID)
+std::wstring WebUIAutomation::GetCommandLineArgs(DWORD processID)
 {
 	std::wstring commandLine;
 
